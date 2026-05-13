@@ -3,266 +3,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Martina Slot Machine - Dual Screen Kiosk</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Martina Slot Machine</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;900&display=swap');
+        :root {
+            --divider-pos: 50%;
+            --bg-color: #0a0a0a;
+            --text-color: #ffffff;
+            --accent-color: #ff3b30;
+        }
 
         body, html {
             margin: 0;
             padding: 0;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            background-color: #000;
-            font-family: 'Inter', sans-serif;
-            color: white;
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             user-select: none;
         }
 
-        .reel-container {
+        #app {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
             position: relative;
+        }
+
+        /* Screens */
+        .screen {
             height: 100%;
             overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+
+        #screen-left { width: var(--divider-pos); border-right: 1px solid #333; }
+        #screen-right { flex-grow: 1; }
+
+        /* The Divider */
+        #divider {
+            position: absolute;
+            left: var(--divider-pos);
+            top: 0;
+            width: 20px;
+            height: 100%;
+            transform: translateX(-50%);
+            cursor: col-resize;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+        }
+        #divider::after {
+            content: '';
+            width: 2px;
+            height: 100%;
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Reel Animation */
+        .reel-container {
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
         }
 
-        /* The Spinning Animation */
-        .spinning {
-            animation: blurLoop 0.2s linear infinite;
+        .reel-strip {
+            display: flex;
+            flex-direction: column;
+            will-change: transform;
         }
 
-        @keyframes blurLoop {
-            0% { transform: translateY(0); filter: blur(10px); opacity: 0.7; }
-            100% { transform: translateY(-50%); filter: blur(15px); opacity: 0.5; }
+        .spinning .reel-strip {
+            animation: scrollReel 0.5s linear infinite;
+            filter: blur(15px);
         }
 
-        /* The Snap Transition */
-        .snapped-image {
-            max-width: 90%;
-            max-height: 80%;
+        @keyframes scrollReel {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
+
+        .reel-item {
+            width: 100%;
+            height: 100vh;
             object-fit: contain;
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
+            flex-shrink: 0;
         }
 
-        /* Draggable Divider Styling */
-        #divider {
-            width: 10px;
-            cursor: col-resize;
-            background: rgba(255, 255, 255, 0.1);
-            transition: background 0.2s;
+        /* Result View */
+        .result-image {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+        }
+        .result-image.loaded {
+            opacity: 1;
+        }
+
+        /* UI Overlays */
+        #message-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            text-align: left;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s ease;
             z-index: 50;
         }
-        #divider:hover, #divider.active {
-            background: rgba(255, 255, 255, 0.5);
+        
+        /* Requirement 6: Move message to object side */
+        #screen-right #message-overlay {
+            opacity: 0;
+            left: 10%;
+            transform: translateY(-50%);
         }
 
-        /* Overlay for Match State */
-        #message-overlay {
-            pointer-events: none;
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(5px);
-            transition: opacity 0.8s ease;
+        .show-result #screen-right #message-overlay {
+            opacity: 1;
+        }
+
+        .key-message {
+            font-size: 4rem;
+            font-weight: 800;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            line-height: 1.1;
+            text-transform: uppercase;
         }
 
         .leporello-text {
             font-size: 1.5rem;
-            line-height: 1.6;
+            color: rgba(255,255,255,0.8);
             max-width: 600px;
-            text-align: center;
         }
+
+        /* Hide placeholders during spin */
+        .spinning .result-image { display: none; }
+        .idle .reel-container { display: none; }
     </style>
 </head>
-<body class="flex flex-row">
+<body class="spinning">
 
-    
-    <!-- LEFT SCREEN (Portraits) -->
-    <div id="screen-left" class="h-full relative border-r border-white/10" style="width: 50%;">
-        <div id="reel-left" class="reel-container h-full w-full">
-            <img id="img-left" src="" class="snapped-image" alt="Portrait" onerror="this.src='https://placehold.co/600x800/222/fff?text=Portrait'">
+<div id="app">
+    <!-- Screen 1: Portait -->
+    <div id="screen-left" class="screen">
+        <div class="reel-container">
+            <div class="reel-strip" id="strip-left">
+                <!-- JS will populate -->
+            </div>
         </div>
-        <div class="absolute bottom-10 left-10 text-xs opacity-30">SCREEN 1 / PORTRAIT</div>
+        <img id="display-portrait" class="result-image" alt="">
     </div>
 
-    <!-- DRAGGABLE DIVIDER -->
     <div id="divider"></div>
 
-    <!-- RIGHT SCREEN (Objects) -->
-    <div id="screen-right" class="h-full relative flex-grow">
-        <div id="reel-right" class="reel-container h-full w-full">
-            <img id="img-right" src="" class="snapped-image" alt="Object" onerror="this.src='https://placehold.co/600x800/333/fff?text=Object'">
+    <!-- Screen 2: Object -->
+    <div id="screen-right" class="screen">
+        <div class="reel-container">
+            <div class="reel-strip" id="strip-right">
+                <!-- JS will populate -->
+            </div>
         </div>
-        <div class="absolute bottom-10 right-10 text-xs opacity-30 text-right">SCREEN 2 / OBJECT</div>
+        <img id="display-object" class="result-image" alt="">
+        
+        <div id="message-overlay">
+            <div id="key-message" class="key-message"></div>
+            <div id="leporello" class="leporello-text"></div>
+        </div>
     </div>
+</div>
 
-    <!-- MESSAGE OVERLAY (Match State) -->
-    <div id="message-overlay" class="fixed inset-0 flex flex-col items-center justify-center opacity-0 z-40">
-        <h1 id="key-message" class="text-6xl font-black uppercase tracking-tighter mb-6 text-yellow-400">KEY MESSAGE</h1>
-        <p id="leporello-text" class="leporello-text font-light italic">Leporello description goes here...</p>
-    </div>
+<audio id="audio-player"></audio>
 
-    <!-- DEBUG UI (Visible for calibration) -->
-    <div class="fixed top-4 left-4 bg-black/50 p-2 text-[10px] rounded border border-white/20 z-50 pointer-events-none">
-        STATUS: <span id="status-label">SPINNING</span><br>
-        INDEX: <span id="index-label">15</span><br>
-        TRIGGER: Press Letter/Number
-    </div>
-
-    <!-- AUDIO ELEMENT -->
-    <audio id="audio-player"></audio>
-
-    <script>
-
-        // Data Structure for the 17 pairs (Currently focused on 15, 16, 17)
-        const assetPairs = [
-            { id: 15, name: "Yulia", message: "“Umweltschutz kennt keine Nationalität.”", leporello: "The story of Yulia and the object from set 15.", audioExt: "ogg" },
-            { id: 16, name: "Eva", message: "“Neues in Altem.”", leporello: "The story of Eva and the object from set 16.", audioExt: "m4a" },
-            { id: 17, name: "Maxime", message: "“Wissen um die Zerstörung bewahren – durch eigenes Handeln.”", leporello: "The story of Maxime and the object from set 17.", audioExt: "mp3" }
-        ];
-
-        let currentIndex = 0;
-        let isSpinning = true;
-        let isTransitioning = false;
-
-        const leftImg = document.getElementById('img-left');
-        const rightImg = document.getElementById('img-right');
-        const leftReel = document.getElementById('reel-left');
-        const rightReel = document.getElementById('reel-right');
-        const audioPlayer = document.getElementById('audio-player');
-        const overlay = document.getElementById('message-overlay');
-        const statusLabel = document.getElementById('status-label');
-        const indexLabel = document.getElementById('index-label');
-
-
-        function init() {
-            startSpinning();
-            setupDivider();
-            setupInput();
+<script>
+    const data = [
+        {
+            id: 15,
+            name: "Yulia",
+            portrait: "portrait_15.jpg",
+            object: "object_15.jpg",
+            audio: "audio_15.ogg",
+            message: "Home is where the heart is.",
+            leporello: "Yulia's journey across borders brought only this small locket."
+        },
+        {
+            id: 16,
+            name: "Eva",
+            portrait: "portrait_16.jpg",
+            object: "object_16.jpg",
+            audio: "audio_16.m4a",
+            message: "The weight of memory.",
+            leporello: "Eva carries the keys to a house that no longer exists."
+        },
+        {
+            id: 17,
+            name: "Maxime",
+            portrait: "portrait_17.png",
+            object: "object_17.jpg",
+            audio: "audio_17.mp3",
+            message: "A future redefined.",
+            leporello: "Maxime's camera caught the first light of a new city."
         }
+    ];
 
-        function startSpinning() {
-            isSpinning = true;
-            isTransitioning = false;
-            statusLabel.innerText = "SPINNING";
-            overlay.style.opacity = "0";
-            
-            // Add spinning animation classes
-            leftReel.classList.add('spinning');
-            rightReel.classList.add('spinning');
-            
-            // Hide specific images during spin
-            leftImg.style.opacity = "0";
-            rightImg.style.opacity = "0";
-        }
+    let currentIndex = 0;
+    let isSpinning = true;
+    let keysPressed = new Set();
 
-        function triggerStop() {
-            if (!isSpinning || isTransitioning) return;
-            
-            isSpinning = false;
-            isTransitioning = true;
-            statusLabel.innerText = "SNAPPING";
+    const body = document.body;
+    const audio = document.getElementById('audio-player');
+    const portImg = document.getElementById('display-portrait');
+    const objImg = document.getElementById('display-object');
+    const keyMsg = document.getElementById('key-message');
+    const leporello = document.getElementById('leporello');
 
-            const currentPair = assetPairs[currentIndex];
-            indexLabel.innerText = currentPair.id;
+    // 1. Populate Reels for animation
+    function setupReels() {
+        const leftStrip = document.getElementById('strip-left');
+        const rightStrip = document.getElementById('strip-right');
+        
+        // Create a long strip of all portraits/objects for the blur scroll effect
+        const content = [...data, ...data, ...data]; // Triple it to ensure seamless loop
+        content.forEach(item => {
+            const p = document.createElement('img');
+            p.src = item.portrait;
+            p.className = 'reel-item';
+            leftStrip.appendChild(p);
 
-            // 1. Update Sources
-            leftImg.src = `portrait_${currentPair.id}.jpg`;
-            rightImg.src = `object_${currentPair.id}.jpg`;
-            //audioPlayer.src = `audio_${currentPair.id}.mp3`;
-            // В функции triggerStop
-            const ext = currentPair.audioExt || 'mp3';
-            audioPlayer.src = `audio_${currentPair.id}.${ext}`;
-            audioPlayer.load(); // ПРИНУДИТЕЛЬНАЯ ПЕРЕЗАГРУЗКА ФАЙЛА
+            const o = document.createElement('img');
+            o.src = item.object;
+            o.className = 'reel-item';
+            rightStrip.appendChild(o);
+        });
+    }
 
-            // 2. Stop Animations
-            leftReel.classList.remove('spinning');
-            rightReel.classList.remove('spinning');
+    // 2. Interaction Logic
+    function handleTrigger() {
+        if (!isSpinning) return;
+        stopSpinning();
+    }
 
-            // 3. Reveal and "Snap" visuals
-            leftImg.style.opacity = "1";
-            rightImg.style.opacity = "1";
-            leftImg.style.transform = "scale(1.1)";
-            rightImg.style.transform = "scale(1.1)";
+    function stopSpinning() {
+        isSpinning = false;
+        const match = data[currentIndex];
 
-            setTimeout(() => {
-                leftImg.style.transform = "scale(1)";
-                rightImg.style.transform = "scale(1)";
-                showMatchState(currentPair);
-            }, 300);
+        // Reset classes and hide images while loading
+        body.classList.remove('spinning');
+        body.classList.add('idle');
+        portImg.classList.remove('loaded');
+        objImg.classList.remove('loaded');
 
-            // Increment for next loop (Linear)
-            currentIndex = (currentIndex + 1) % assetPairs.length;
-        }
+        // Set sources
+        portImg.src = match.portrait;
+        objImg.src = match.object;
+        keyMsg.innerText = match.message;
+        leporello.innerText = match.leporello;
 
-        function showMatchState(pair) {
-            statusLabel.innerText = "MATCH STATE";
-            document.getElementById('key-message').innerText = pair.message;
-            document.getElementById('leporello-text').innerText = pair.leporello;
-            overlay.style.opacity = "1";
-
-            // Play Audio
-            audioPlayer.play().catch(e => {
-                console.warn("Audio autoplay blocked or file missing. Manual interaction required.", e);
-            });
-        }
-
-        // Reset when audio finishes
-        audioPlayer.onended = () => {
-            startSpinning();
+        // Fix Requirement 3: Wait for images to load before showing
+        let loadedCount = 0;
+        const checkLoaded = () => {
+            loadedCount++;
+            if (loadedCount >= 2) {
+                portImg.classList.add('loaded');
+                objImg.classList.add('loaded');
+                body.classList.add('show-result');
+                audio.src = match.audio;
+                audio.play().catch(e => console.log("Audio play blocked"));
+            }
         };
+        portImg.onload = checkLoaded;
+        objImg.onload = checkLoaded;
 
+        // Prepare next index
+        currentIndex = (currentIndex + 1) % data.length;
+    }
 
-        function setupDivider() {
-            const divider = document.getElementById('divider');
-            const leftScreen = document.getElementById('screen-left');
-            let isDragging = false;
+    function resetToSpin() {
+        isSpinning = true;
+        body.classList.remove('idle', 'show-result');
+        body.classList.add('spinning');
+        audio.pause();
+    }
 
-            divider.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                divider.classList.add('active');
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                let percentage = (e.clientX / window.innerWidth) * 100;
-                // Constraints
-                if (percentage > 20 && percentage < 80) {
-                    leftScreen.style.width = percentage + '%';
-                }
-            });
-
-            document.addEventListener('mouseup', () => {
-                isDragging = false;
-                divider.classList.remove('active');
-            });
+    // 3. Event Listeners
+    // Requirement 1: Alpha-numeric trigger, no mouse, yes touch
+    window.addEventListener('keydown', (e) => {
+        keysPressed.add(e.key.toLowerCase());
+        
+        // Requirement 4: Shortcut 's' + 'k' to skip audio
+        if (keysPressed.has('s') && keysPressed.has('k')) {
+            if (!isSpinning) resetToSpin();
+            return;
         }
 
-
-        function setupInput() {
-            document.addEventListener('keydown', (e) => {
-                // Regex to check for letters or numbers
-                const isAlphanumeric = /^[a-z0-9]$/i.test(e.key);
-                
-                if (isAlphanumeric || e.code === "Space" || e.code === "Enter") {
-                    if (isSpinning) {
-                        triggerStop();
-                    }
-                }
-            });
-            
-            // Allow clicking to trigger for testing
-            document.body.addEventListener('click', (e) => {
-                if (e.target.id === 'divider') return;
-                if (isSpinning) triggerStop();
-            });
+        // Only alphanumeric keys trigger the match
+        if (/^[a-z0-9]$/i.test(e.key)) {
+            handleTrigger();
         }
+    });
 
-        // Initialize on load
-        window.onload = init;
+    window.addEventListener('keyup', (e) => {
+        keysPressed.delete(e.key.toLowerCase());
+    });
 
-    </script>
+    // Mobile tapping allowed
+    window.addEventListener('touchstart', (e) => {
+        // Prevent trigger if touching the divider
+        if (e.target.id !== 'divider') {
+            handleTrigger();
+        }
+    });
+
+    // Requirement 5: Divider Logic (Mouse only)
+    const divider = document.getElementById('divider');
+    let isDragging = false;
+
+    divider.addEventListener('mousedown', () => isDragging = true);
+    window.addEventListener('mouseup', () => isDragging = false);
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const percent = (e.clientX / window.innerWidth) * 100;
+        document.documentElement.style.setProperty('--divider-pos', `${percent}%`);
+    });
+
+    audio.onended = resetToSpin;
+
+    // Start
+    setupReels();
+</script>
+
 </body>
 </html>
