@@ -120,7 +120,6 @@
             text-align: center;
         }
 
-        /* Result View Overlay */
         .result-display {
             position: absolute;
             top: 0;
@@ -230,40 +229,32 @@
 
 <script>
     const data = [
-        {
-            id: 15,
-            name: "Yulia Virts",
-            country: "Ukraine",
-            artwork: "Kuratorin",
-            portrait: "portrait_15.jpg",
-            object: "object_15.jpg",
-            audio: "audio_15.ogg",
-            message: "“Umweltschutz kennt keine Nationalität.”",
-            leporello: "leporello text here"
-        },
-        {
-            id: 16,
-            name: "Eva Oltivanyi",
-            country: "Schweiz/Ungarn",
-            artwork: "Kalocsa-Koffer",
-            portrait: "portrait_16.jpg",
-            object: "object_16.jpg",
-            audio: "audio_16.m4a",
-            message: "“Neues in Altem.”",
-            leporello: "leporello text here"
-        },
-        {
-            id: 17,
-            name: "Maxime Clusqeau",
-            country: "Ukraine",
-            artwork: "Kettenhemdweste",
-            portrait: "portrait_17.png",
-            object: "object_17.jpg",
-            audio: "audio_17.mp3",
-            message: "“Wissen um die Zerstörung bewahren - durch eigenes Handeln.”",
-            leporello: "leporello text here"
-        }
-    ];
+        { id: 1, name: "Halyna Sonina", country: "Ukraine", artwork: "Patchwork", message: "“Alten Dingen schenke ich neues Leben...”", leporello: "" },
+        { id: 2, name: "Loris Andreoli", country: "Schweiz", artwork: "Energie-Stuhl", message: "“Elektroschrott zerstoert die Natur in armen Laendern...”", leporello: "" },
+        { id: 3, name: "Ljubov Sobolyeva", country: "Ukraine", artwork: "Welt im Glas", message: "“Die Natur erneuert sich - und gibt innere Ruhe...”", leporello: "" },
+        { id: 4, name: "Tarek Shohimi", country: "Schweiz / Syrien", artwork: "Mach dir Licht!", message: "“Energie fasziniert. Mit den Haenden arbeiten ist wie meditieren...”", leporello: "" },
+        { id: 5, name: "Daria Kuzmina", country: "Ukraine", artwork: "Wesen", message: "“Aus Verletzung waechst Erneuerung...”", leporello: "" },
+        { id: 6, name: "Lubna Abou Kheir", country: "Syrien", artwork: "Sauerstoff", message: "“Ein langer Atem fuer die Zukunft...”", leporello: "" },
+        { id: 7, name: "Altaf Hussain Azimi", country: "Afghanistan", artwork: "Sauerstoff", message: "“Ein langer Atem fuer die Zukunft...”", leporello: "" },
+        { id: 8, name: "Valeriia Seiler", country: "Ukraine", artwork: "Sauerstoff", message: "“Ein langer Atem fuer die Zukunft...”", leporello: "" },
+        { id: 9, name: "Ruth Mujinga", country: "DR Kongo", artwork: "Maniok", message: "“Der Maniok-Baum spendet Leben...”", leporello: "" },
+        { id: 10, name: "Liudmyla Odarchuk", country: "Ukraine", artwork: "Unser Planet - unsere Verantwortung", message: "“Es geht um die Zukunft kuenftiger Generationen...”", leporello: "" },
+        { id: 11, name: "Tetiana Sydorenko", country: "Ukraine", artwork: "Unser Planet - unsere Verantwortung", message: "“Es geht um die Zukunft kuenftiger Generationen...”", leporello: "" },
+        { id: 12, name: "Olga Kostenko", country: "Ukraine", artwork: "Unser Planet - unsere Verantwortung", message: "“Es geht um die Zukunft kuenftiger Generationen...”", leporello: "" },
+        { id: 13, name: "Aresu Rabbani", country: "Afghanistan", artwork: "Auf der Flucht", message: "“Re-Cycling gehoert bei uns zum Alltag...”", leporello: "" },
+        { id: 14, name: "Anastasiia Biletska", country: "Ukraine", artwork: "WIP Photo", message: "“Im kreativen Prozess staerken wir Umweltverantwortung und Gemeinschaft...”", leporello: "" },
+        { id: 15, name: "Yulia Virts", country: "Ukraine", artwork: "Kuratorin", message: "“Umweltschutz kennt keine Nationalitaet...”", leporello: "" },
+        { id: 16, name: "Eva Oltivanyi", country: "Schweiz / Ungarn", artwork: "Kalocsa-Koffer", message: "“Neues in Altem...”", leporello: "" },
+        { id: 17, name: "Maxime Clusqeau", country: "Ukraine", artwork: "Chainmail Vest", message: "“Wissen um die Zerstoerung bewahren - durch eigenes Handeln...”", leporello: "" }
+    ].map(item => {
+        const idPad = String(item.id).padStart(2, '0');
+        return {
+            ...item,
+            portrait: item.id === 12 ? "" : `portrait_${idPad}.jpg`,
+            object: `object_${idPad}.jpg`,
+            audio: `audio_${idPad}.mp3`
+        };
+    });
 
     let currentIndex = 0;
     let stopStage = 0; 
@@ -284,19 +275,16 @@
     const rightContainer = document.getElementById('container-right');
 
     function setupReels() {
-        // Triple the data for seamless looping
         const content = [...data, ...data, ...data];
         content.forEach(item => {
-            // Left Reel Item
             const leftBox = document.createElement('div');
             leftBox.className = 'reel-item-container';
             leftBox.innerHTML = `
-                <img src="${item.portrait}" class="reel-item">
+                ${item.portrait ? `<img src="${item.portrait}" class="reel-item">` : '<div style="font-size:5rem; color:#333;">?</div>'}
                 <div class="item-label">${item.name}, ${item.country}</div>
             `;
             leftStrip.appendChild(leftBox);
 
-            // Right Reel Item
             const rightBox = document.createElement('div');
             rightBox.className = 'reel-item-container';
             rightBox.innerHTML = `
@@ -345,20 +333,17 @@
 
     function finalizeResult() {
         const match = data[currentIndex];
-    
-        // Set static result content
-        portImg.src = match.portrait;
+        portImg.src = match.portrait || "";
+        portImg.style.display = match.portrait ? 'block' : 'none';
         objImg.src = match.object;
         portLab.innerText = `${match.name}, ${match.country}`;
         objLab.innerText = match.artwork;
-    
         keyMsg.innerText = match.message;
         leporello.innerText = match.leporello;
 
         body.classList.add('show-result');
         audio.src = match.audio;
-        audio.play().catch(e => console.log("Audio playback prevented"));
-    
+        audio.play().catch(e => console.warn("Playback prevented"));
         currentIndex = (currentIndex + 1) % data.length;
     }
 
@@ -384,10 +369,7 @@
     });
 
     window.addEventListener('keyup', (e) => keysPressed.delete(e.key.toLowerCase()));
-
-    window.addEventListener('touchstart', (e) => {
-        if (e.target.id !== 'divider') handleTrigger();
-    });
+    window.addEventListener('touchstart', (e) => { if (e.target.id !== 'divider') handleTrigger(); });
 
     const divider = document.getElementById('divider');
     let isDragging = false;
