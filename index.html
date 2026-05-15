@@ -10,7 +10,6 @@
             --bg-color: #0a0a0a;
             --text-color: #ffffff;
             --accent-color: #ff3b30;
-            /* Slower spin speed */
             --spin-speed: 3s; 
         }
 
@@ -68,6 +67,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
+            transition: opacity 0.5s ease;
         }
 
         .reel-strip {
@@ -76,13 +76,11 @@
             will-change: transform;
         }
 
-        /* Continuous Spin */
         .spinning .reel-strip {
             animation: scrollReel var(--spin-speed) linear infinite;
             filter: blur(8px);
         }
 
-        /* Smooth Bezier Stop */
         .stopping .reel-strip {
             animation: none;
             transition: transform 2.5s cubic-bezier(0.15, 0, 0.15, 1);
@@ -91,42 +89,85 @@
 
         @keyframes scrollReel {
             0% { transform: translateY(0); }
-            100% { transform: translateY(-33.333%); } /* Adjust to match triple data length */
+            100% { transform: translateY(-33.333%); }
         }
 
-        .reel-item {
+        .reel-item-container {
             width: 100%;
             height: 100vh;
-            object-fit: contain;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             flex-shrink: 0;
         }
 
-        .result-image {
-            display: none; /* Hidden until final state */
-            max-width: 90%;
-            max-height: 90%;
+        .reel-item {
+            max-width: 80%;
+            max-height: 60%;
             object-fit: contain;
-            opacity: 0;
-            transition: opacity 0.5s ease-in;
+        }
+
+        .item-label {
+            margin-top: 20px;
+            color: var(--text-color);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        /* Result View Overlay */
+        .result-display {
             position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease;
             z-index: 10;
         }
-        
-        .show-result .result-image {
-            display: block;
+
+        .show-result .result-display {
             opacity: 1;
+            visibility: visible;
         }
-        
-        /* Hide reel once result is shown to clear memory/visuals */
-        .show-result .reel-container { visibility: hidden; }
+
+        .result-image {
+            max-width: 80%;
+            max-height: 60%;
+            object-fit: contain;
+        }
+
+        .result-label {
+            margin-top: 20px;
+            color: var(--text-color);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .show-result .reel-container { opacity: 0; }
 
         #message-overlay {
             position: absolute;
-            top: 50%;
-            left: 10%;
-            transform: translateY(-50%);
-            width: 80%;
-            text-align: left;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            text-align: center;
             pointer-events: none;
             opacity: 0;
             transition: opacity 1s ease;
@@ -138,18 +179,19 @@
         }
 
         .key-message {
-            font-size: 4rem;
+            font-size: 2.2rem;
             font-weight: 800;
             color: var(--text-color);
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             line-height: 1.1;
             text-transform: uppercase;
         }
 
         .leporello-text {
-            font-size: 1.5rem;
+            font-size: 1rem;
             color: rgba(255,255,255,0.8);
-            max-width: 600px;
+            max-width: 800px;
+            margin: 0 auto;
         }
     </style>
 </head>
@@ -160,7 +202,10 @@
         <div class="reel-container" id="container-left">
             <div class="reel-strip" id="strip-left"></div>
         </div>
-        <img id="display-portrait" class="result-image" alt="">
+        <div class="result-display">
+            <img id="display-portrait" class="result-image" alt="">
+            <div id="label-portrait" class="result-label"></div>
+        </div>
     </div>
 
     <div id="divider"></div>
@@ -169,11 +214,14 @@
         <div class="reel-container" id="container-right">
             <div class="reel-strip" id="strip-right"></div>
         </div>
-        <img id="display-object" class="result-image" alt="">
-        
-        <div id="message-overlay">
-            <div id="key-message" class="key-message"></div>
-            <div id="leporello" class="leporello-text"></div>
+        <div class="result-display">
+            <img id="display-object" class="result-image" alt="">
+            <div id="label-object" class="result-label"></div>
+            
+            <div id="message-overlay">
+                <div id="key-message" class="key-message"></div>
+                <div id="leporello" class="leporello-text"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -184,41 +232,49 @@
     const data = [
         {
             id: 15,
-            name: "Yulia",
+            name: "Yulia Virts",
+            country: "Ukraine",
+            artwork: "Kuratorin",
             portrait: "portrait_15.jpg",
             object: "object_15.jpg",
             audio: "audio_15.ogg",
-            message: "Home is where the heart is.",
-            leporello: "Yulia's journey across borders brought only this small locket."
+            message: "“Umweltschutz kennt keine Nationalität.”",
+            leporello: "leporello text here"
         },
         {
             id: 16,
-            name: "Eva",
+            name: "Eva Oltivanyi",
+            country: "Schweiz/Ungarn",
+            artwork: "Kalocsa-Koffer",
             portrait: "portrait_16.jpg",
             object: "object_16.jpg",
             audio: "audio_16.m4a",
-            message: "The weight of memory.",
-            leporello: "Eva carries the keys to a house that no longer exists."
+            message: "“Neues in Altem.”",
+            leporello: "leporello text here"
         },
         {
             id: 17,
-            name: "Maxime",
+            name: "Maxime Clusqeau",
+            country: "Ukraine",
+            artwork: "Kettenhemdweste",
             portrait: "portrait_17.png",
             object: "object_17.jpg",
             audio: "audio_17.mp3",
-            message: "A future redefined.",
-            leporello: "Maxime's camera caught the first light of a new city."
+            message: "“Wissen um die Zerstörung bewahren - durch eigenes Handeln.”",
+            leporello: "leporello text here"
         }
     ];
 
     let currentIndex = 0;
-    let stopStage = 0; // 0: Spinning, 1: Left Stop, 2: Right Stop
+    let stopStage = 0; 
     let keysPressed = new Set();
 
     const body = document.body;
     const audio = document.getElementById('audio-player');
     const portImg = document.getElementById('display-portrait');
     const objImg = document.getElementById('display-object');
+    const portLab = document.getElementById('label-portrait');
+    const objLab = document.getElementById('label-object');
     const keyMsg = document.getElementById('key-message');
     const leporello = document.getElementById('leporello');
     
@@ -228,18 +284,26 @@
     const rightContainer = document.getElementById('container-right');
 
     function setupReels() {
-        // Triple the content to ensure the loop and smooth stop positions
+        // Triple the data for seamless looping
         const content = [...data, ...data, ...data];
         content.forEach(item => {
-            const p = document.createElement('img');
-            p.src = item.portrait;
-            p.className = 'reel-item';
-            leftStrip.appendChild(p);
+            // Left Reel Item
+            const leftBox = document.createElement('div');
+            leftBox.className = 'reel-item-container';
+            leftBox.innerHTML = `
+                <img src="${item.portrait}" class="reel-item">
+                <div class="item-label">${item.name}, ${item.country}</div>
+            `;
+            leftStrip.appendChild(leftBox);
 
-            const o = document.createElement('img');
-            o.src = item.object;
-            o.className = 'reel-item';
-            rightStrip.appendChild(o);
+            // Right Reel Item
+            const rightBox = document.createElement('div');
+            rightBox.className = 'reel-item-container';
+            rightBox.innerHTML = `
+                <img src="${item.object}" class="reel-item">
+                <div class="item-label">${item.artwork}</div>
+            `;
+            rightStrip.appendChild(rightBox);
         });
     }
 
@@ -253,14 +317,11 @@
 
     function stopLeft() {
         stopStage = 1;
-        // Capture current visual position to prevent jump
         const style = window.getComputedStyle(leftStrip);
         const matrix = new WebKitCSSMatrix(style.transform);
-        leftStrip.style.transform = `translateY(${matrix.m41}px)`;
-        
+        leftStrip.style.transform = `translateY(${matrix.m42}px)`;
         leftContainer.classList.add('stopping');
         
-        // Target index in the middle set of the triple data
         const targetY = - (currentIndex + data.length) * 100;
         setTimeout(() => {
             leftStrip.style.transform = `translateY(${targetY}vh)`;
@@ -271,8 +332,7 @@
         stopStage = 2;
         const style = window.getComputedStyle(rightStrip);
         const matrix = new WebKitCSSMatrix(style.transform);
-        rightStrip.style.transform = `translateY(${matrix.m41}px)`;
-        
+        rightStrip.style.transform = `translateY(${matrix.m42}px)`;
         rightContainer.classList.add('stopping');
         
         const targetY = - (currentIndex + data.length) * 100;
@@ -280,22 +340,25 @@
             rightStrip.style.transform = `translateY(${targetY}vh)`;
         }, 10);
 
-        // When the right reel finishes its smooth transition, show the final result
         rightStrip.addEventListener('transitionend', finalizeResult, { once: true });
     }
 
     function finalizeResult() {
         const match = data[currentIndex];
-        
+    
+        // Set static result content
         portImg.src = match.portrait;
         objImg.src = match.object;
+        portLab.innerText = `${match.name}, ${match.country}`;
+        objLab.innerText = match.artwork;
+    
         keyMsg.innerText = match.message;
         leporello.innerText = match.leporello;
 
         body.classList.add('show-result');
         audio.src = match.audio;
-        audio.play().catch(e => console.log("Audio blocked"));
-        
+        audio.play().catch(e => console.log("Audio playback prevented"));
+    
         currentIndex = (currentIndex + 1) % data.length;
     }
 
@@ -315,7 +378,7 @@
             if (stopStage !== 0) resetToSpin();
             return;
         }
-        if (/^[a-z0-9]$/i.test(e.key)) {
+        if (/^[a-z0-9]$/i.test(e.key) || e.key === ' ') {
             handleTrigger();
         }
     });
