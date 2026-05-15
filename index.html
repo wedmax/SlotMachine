@@ -7,10 +7,10 @@
     <style>
         :root {
             --divider-pos: 50%;
-            --bg-color: #0a0a0a;
-            --text-color: #ffffff;
+            --bg-color: #ffffff;
+            --text-color: #000000;
             --accent-color: #ff3b30;
-            --spin-speed: 3s; 
+            --spin-speed: 12s; 
         }
 
         body, html {
@@ -20,6 +20,7 @@
             height: 100%;
             overflow: hidden;
             background-color: var(--bg-color);
+            color: var(--text-color);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             user-select: none;
         }
@@ -38,10 +39,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #000;
+            background: #fff;
         }
 
-        #screen-left { width: var(--divider-pos); border-right: 1px solid #333; }
+        #screen-left { width: var(--divider-pos); border-right: 1px solid #eee; }
         #screen-right { flex-grow: 1; }
 
         #divider {
@@ -60,7 +61,7 @@
             content: '';
             width: 2px;
             height: 100%;
-            background: rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.1);
         }
 
         .reel-container {
@@ -78,13 +79,11 @@
 
         .spinning .reel-strip {
             animation: scrollReel var(--spin-speed) linear infinite;
-            filter: blur(8px);
         }
 
         .stopping .reel-strip {
             animation: none;
             transition: transform 2.5s cubic-bezier(0.15, 0, 0.15, 1);
-            filter: blur(0);
         }
 
         @keyframes scrollReel {
@@ -104,18 +103,19 @@
 
         .reel-item {
             max-width: 80%;
-            max-height: 60%;
+            max-height: 50%;
             object-fit: contain;
         }
 
         .item-label {
-            margin-top: 20px;
+            margin-top: 30px;
             color: var(--text-color);
-            font-size: 1.2rem;
+            font-size: 2.4rem; /* 2x bigger */
+            font-weight: 700;
             text-transform: uppercase;
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
             pointer-events: none;
             text-align: center;
         }
@@ -143,18 +143,19 @@
 
         .result-image {
             max-width: 80%;
-            max-height: 60%;
+            max-height: 50%;
             object-fit: contain;
         }
 
         .result-label {
-            margin-top: 20px;
+            margin-top: 30px;
             color: var(--text-color);
-            font-size: 1.2rem;
+            font-size: 2.4rem; /* 2x bigger */
+            font-weight: 700;
             text-transform: uppercase;
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
             text-align: center;
         }
 
@@ -162,7 +163,7 @@
 
         #message-overlay {
             position: absolute;
-            bottom: 50px;
+            bottom: 60px;
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
@@ -186,9 +187,20 @@
             text-transform: uppercase;
         }
 
+        .speaker-icon {
+            display: inline-block;
+            margin-left: 15px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
         .leporello-text {
-            font-size: 1rem;
-            color: rgba(255,255,255,0.8);
+            font-size: 1.1rem;
+            color: rgba(0,0,0,0.6);
             max-width: 800px;
             margin: 0 auto;
         }
@@ -218,7 +230,9 @@
             <div id="label-object" class="result-label"></div>
             
             <div id="message-overlay">
-                <div id="key-message" class="key-message"></div>
+                <div id="key-message-container" class="key-message">
+                    <span id="key-message"></span><span class="speaker-icon">🔊</span>
+                </div>
                 <div id="leporello" class="leporello-text"></div>
             </div>
         </div>
@@ -280,7 +294,7 @@
             const leftBox = document.createElement('div');
             leftBox.className = 'reel-item-container';
             leftBox.innerHTML = `
-                ${item.portrait ? `<img src="${item.portrait}" class="reel-item">` : '<div style="font-size:5rem; color:#333;">?</div>'}
+                ${item.portrait ? `<img src="${item.portrait}" class="reel-item">` : '<div style="font-size:5rem; color:#eee;">?</div>'}
                 <div class="item-label">${item.name}, ${item.country}</div>
             `;
             leftStrip.appendChild(leftBox);
