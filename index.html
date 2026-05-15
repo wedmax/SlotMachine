@@ -10,6 +10,8 @@
             --bg-color: #0a0a0a;
             --text-color: #ffffff;
             --accent-color: #ff3b30;
+            /* Slower spin speed */
+            --spin-speed: 3s; 
         }
 
         body, html {
@@ -30,7 +32,6 @@
             position: relative;
         }
 
-        /* Screens */
         .screen {
             height: 100%;
             overflow: hidden;
@@ -44,7 +45,6 @@
         #screen-left { width: var(--divider-pos); border-right: 1px solid #333; }
         #screen-right { flex-grow: 1; }
 
-        /* The Divider */
         #divider {
             position: absolute;
             left: var(--divider-pos);
@@ -64,12 +64,10 @@
             background: rgba(255,255,255,0.2);
         }
 
-        /* Reel Animation */
         .reel-container {
             width: 100%;
             height: 100%;
-            display: flex;
-            flex-direction: column;
+            overflow: hidden;
         }
 
         .reel-strip {
@@ -78,14 +76,22 @@
             will-change: transform;
         }
 
+        /* Continuous Spin */
         .spinning .reel-strip {
-            animation: scrollReel 0.5s linear infinite;
-            filter: blur(15px);
+            animation: scrollReel var(--spin-speed) linear infinite;
+            filter: blur(8px);
+        }
+
+        /* Smooth Bezier Stop */
+        .stopping .reel-strip {
+            animation: none;
+            transition: transform 2.5s cubic-bezier(0.15, 0, 0.15, 1);
+            filter: blur(0);
         }
 
         @keyframes scrollReel {
             0% { transform: translateY(0); }
-            100% { transform: translateY(-50%); }
+            100% { transform: translateY(-33.333%); } /* Adjust to match triple data length */
         }
 
         .reel-item {
@@ -95,24 +101,30 @@
             flex-shrink: 0;
         }
 
-        /* Result View */
         .result-image {
+            display: none; /* Hidden until final state */
             max-width: 90%;
             max-height: 90%;
             object-fit: contain;
             opacity: 0;
             transition: opacity 0.5s ease-in;
+            position: absolute;
+            z-index: 10;
         }
-        .result-image.loaded {
+        
+        .show-result .result-image {
+            display: block;
             opacity: 1;
         }
+        
+        /* Hide reel once result is shown to clear memory/visuals */
+        .show-result .reel-container { visibility: hidden; }
 
-        /* UI Overlays */
         #message-overlay {
             position: absolute;
             top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            left: 10%;
+            transform: translateY(-50%);
             width: 80%;
             text-align: left;
             pointer-events: none;
@@ -121,14 +133,7 @@
             z-index: 50;
         }
         
-        /* Requirement 6: Move message to object side */
-        #screen-right #message-overlay {
-            opacity: 0;
-            left: 10%;
-            transform: translateY(-50%);
-        }
-
-        .show-result #screen-right #message-overlay {
+        .show-result #message-overlay {
             opacity: 1;
         }
 
@@ -146,33 +151,23 @@
             color: rgba(255,255,255,0.8);
             max-width: 600px;
         }
-
-        /* Hide placeholders during spin */
-        .spinning .result-image { display: none; }
-        .idle .reel-container { display: none; }
     </style>
 </head>
 <body class="spinning">
 
 <div id="app">
-    <!-- Screen 1: Portait -->
     <div id="screen-left" class="screen">
-        <div class="reel-container">
-            <div class="reel-strip" id="strip-left">
-                <!-- JS will populate -->
-            </div>
+        <div class="reel-container" id="container-left">
+            <div class="reel-strip" id="strip-left"></div>
         </div>
         <img id="display-portrait" class="result-image" alt="">
     </div>
 
     <div id="divider"></div>
 
-    <!-- Screen 2: Object -->
     <div id="screen-right" class="screen">
-        <div class="reel-container">
-            <div class="reel-strip" id="strip-right">
-                <!-- JS will populate -->
-            </div>
+        <div class="reel-container" id="container-right">
+            <div class="reel-strip" id="strip-right"></div>
         </div>
         <img id="display-object" class="result-image" alt="">
         
@@ -217,7 +212,7 @@
     ];
 
     let currentIndex = 0;
-    let isSpinning = true;
+    let stopStage = 0; // 0: Spinning, 1: Left Stop, 2: Right Stop
     let keysPressed = new Set();
 
     const body = document.body;
@@ -226,14 +221,15 @@
     const objImg = document.getElementById('display-object');
     const keyMsg = document.getElementById('key-message');
     const leporello = document.getElementById('leporello');
+    
+    const leftStrip = document.getElementById('strip-left');
+    const rightStrip = document.getElementById('strip-right');
+    const leftContainer = document.getElementById('container-left');
+    const rightContainer = document.getElementById('container-right');
 
-    // 1. Populate Reels for animation
     function setupReels() {
-        const leftStrip = document.getElementById('strip-left');
-        const rightStrip = document.getElementById('strip-right');
-        
-        // Create a long strip of all portraits/objects for the blur scroll effect
-        const content = [...data, ...data, ...data]; // Triple it to ensure seamless loop
+        // Triple the content to ensure the loop and smooth stop positions
+        const content = [...data, ...data, ...data];
         content.forEach(item => {
             const p = document.createElement('img');
             p.src = item.portrait;
@@ -247,87 +243,91 @@
         });
     }
 
-    // 2. Interaction Logic
     function handleTrigger() {
-        if (!isSpinning) return;
-        stopSpinning();
+        if (stopStage === 0) {
+            stopLeft();
+        } else if (stopStage === 1) {
+            stopRight();
+        }
     }
 
-    function stopSpinning() {
-        isSpinning = false;
+    function stopLeft() {
+        stopStage = 1;
+        // Capture current visual position to prevent jump
+        const style = window.getComputedStyle(leftStrip);
+        const matrix = new WebKitCSSMatrix(style.transform);
+        leftStrip.style.transform = `translateY(${matrix.m41}px)`;
+        
+        leftContainer.classList.add('stopping');
+        
+        // Target index in the middle set of the triple data
+        const targetY = - (currentIndex + data.length) * 100;
+        setTimeout(() => {
+            leftStrip.style.transform = `translateY(${targetY}vh)`;
+        }, 10);
+    }
+
+    function stopRight() {
+        stopStage = 2;
+        const style = window.getComputedStyle(rightStrip);
+        const matrix = new WebKitCSSMatrix(style.transform);
+        rightStrip.style.transform = `translateY(${matrix.m41}px)`;
+        
+        rightContainer.classList.add('stopping');
+        
+        const targetY = - (currentIndex + data.length) * 100;
+        setTimeout(() => {
+            rightStrip.style.transform = `translateY(${targetY}vh)`;
+        }, 10);
+
+        // When the right reel finishes its smooth transition, show the final result
+        rightStrip.addEventListener('transitionend', finalizeResult, { once: true });
+    }
+
+    function finalizeResult() {
         const match = data[currentIndex];
-
-        // Reset classes and hide images while loading
-        body.classList.remove('spinning');
-        body.classList.add('idle');
-        portImg.classList.remove('loaded');
-        objImg.classList.remove('loaded');
-
-        // Set sources
+        
         portImg.src = match.portrait;
         objImg.src = match.object;
         keyMsg.innerText = match.message;
         leporello.innerText = match.leporello;
 
-        // Fix Requirement 3: Wait for images to load before showing
-        let loadedCount = 0;
-        const checkLoaded = () => {
-            loadedCount++;
-            if (loadedCount >= 2) {
-                portImg.classList.add('loaded');
-                objImg.classList.add('loaded');
-                body.classList.add('show-result');
-                audio.src = match.audio;
-                audio.play().catch(e => console.log("Audio play blocked"));
-            }
-        };
-        portImg.onload = checkLoaded;
-        objImg.onload = checkLoaded;
-
-        // Prepare next index
+        body.classList.add('show-result');
+        audio.src = match.audio;
+        audio.play().catch(e => console.log("Audio blocked"));
+        
         currentIndex = (currentIndex + 1) % data.length;
     }
 
     function resetToSpin() {
-        isSpinning = true;
-        body.classList.remove('idle', 'show-result');
-        body.classList.add('spinning');
+        stopStage = 0;
+        body.classList.remove('show-result');
+        leftContainer.classList.remove('stopping');
+        rightContainer.classList.remove('stopping');
+        leftStrip.style.transform = '';
+        rightStrip.style.transform = '';
         audio.pause();
     }
 
-    // 3. Event Listeners
-    // Requirement 1: Alpha-numeric trigger, no mouse, yes touch
     window.addEventListener('keydown', (e) => {
         keysPressed.add(e.key.toLowerCase());
-        
-        // Requirement 4: Shortcut 's' + 'k' to skip audio
         if (keysPressed.has('s') && keysPressed.has('k')) {
-            if (!isSpinning) resetToSpin();
+            if (stopStage !== 0) resetToSpin();
             return;
         }
-
-        // Only alphanumeric keys trigger the match
         if (/^[a-z0-9]$/i.test(e.key)) {
             handleTrigger();
         }
     });
 
-    window.addEventListener('keyup', (e) => {
-        keysPressed.delete(e.key.toLowerCase());
-    });
+    window.addEventListener('keyup', (e) => keysPressed.delete(e.key.toLowerCase()));
 
-    // Mobile tapping allowed
     window.addEventListener('touchstart', (e) => {
-        // Prevent trigger if touching the divider
-        if (e.target.id !== 'divider') {
-            handleTrigger();
-        }
+        if (e.target.id !== 'divider') handleTrigger();
     });
 
-    // Requirement 5: Divider Logic (Mouse only)
     const divider = document.getElementById('divider');
     let isDragging = false;
-
     divider.addEventListener('mousedown', () => isDragging = true);
     window.addEventListener('mouseup', () => isDragging = false);
     window.addEventListener('mousemove', (e) => {
@@ -337,10 +337,7 @@
     });
 
     audio.onended = resetToSpin;
-
-    // Start
     setupReels();
 </script>
-
 </body>
 </html>
