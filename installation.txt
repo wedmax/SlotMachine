@@ -1,0 +1,18 @@
+When you stick this design into an exhibition PC, Mac Mini, or anything else:
+
+Open the terminal/command prompt in the project folder.
+
+Install two lightweight communication and click libraries with one command:
+
+pip install pyserial keyboard pynput
+
+
+Run the script in the background:
+
+python clicker.py
+
+
+
+
+
+Open yours in full screen (on the desired monitor).index.html
