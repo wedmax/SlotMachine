@@ -11,6 +11,10 @@
             --text-color: #000000;
             --accent-color: #ff3b30;
             --spin-speed: 12s; 
+            
+            /* Sizing percentages relative to each half's current width */
+            --pattern-pct-left: 0.60 ;  /* % of left half width */
+            --pattern-pct-right: 0.35; /* % of right half width */
         }
 
         body, html {
@@ -39,7 +43,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #fff;
+            background: transparent;
         }
 
         #screen-left { width: var(--divider-pos); border-right: 1px solid #eee; }
@@ -69,6 +73,8 @@
             height: 100%;
             overflow: hidden;
             transition: opacity 0.5s ease;
+            position: relative; 
+            z-index: 2;         
         }
 
         .reel-strip {
@@ -204,10 +210,51 @@
             max-width: 800px;
             margin: 0 auto;
         }
+
+        .corner-patterns {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; 
+            z-index: 1; 
+        }
+
+        .corner-patterns::before,
+        .corner-patterns::after {
+            content: '';
+            position: absolute;
+            background-image: url('pattern.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            aspect-ratio: 1 / 1;
+        }
+
+        /* Upper left corner: Anchored at center, scale relative to left screen width */
+        .corner-patterns::before {
+            top: 0;
+            left: 0;
+            --size: calc(var(--divider-pos) * var(--pattern-pct-left));
+            width: var(--size);
+            height: var(--size);
+            transform: translate(-25%, -25%);
+        }
+
+        /* Lower right corner: Anchored at center, scale relative to right screen width */
+        .corner-patterns::after {
+            bottom: 0;
+            right: 0;
+            --size: calc((100vw - var(--divider-pos)) * var(--pattern-pct-right));
+            width: var(--size);
+            height: var(--size);
+            transform: translate(50%, 50%);
+        }
+
     </style>
 </head>
 <body class="spinning">
-
+<div class="corner-patterns"></div>
 <div id="app">
     <div id="screen-left" class="screen">
         <div class="reel-container" id="container-left">
@@ -251,7 +298,7 @@
         { id: 6, name: "Lubna Abou Kheir", country: "Syrien", artwork: "Sauerstoff", message: "“Ein langer Atem fuer die Zukunft...”", leporello: "" },
         { id: 7, name: "Altaf Hussain Azimi", country: "Afghanistan", artwork: "Sauerstoff", message: "“Ein langer Atem fuer die Zukunft...”", leporello: "" },
         { id: 8, name: "Valeriia Seiler", country: "Ukraine", artwork: "Sauerstoff", message: "“Ein langer Atem fuer die Zukunft...”", leporello: "" },
-        { id: 9, name: "Ruth Mujinga", country: "DR Kongo", artwork: "Maniok", message: "“Der Maniok-Baum spendet Leben...”", leporello: "" },
+        { id: 9, name: "Ruth Mujinga", country: "DR Kongo", artwork: "Maniok", message: "=" + "“Der Maniok-Baum spendet Leben...”", leporello: "" },
         { id: 10, name: "Liudmyla Odarchuk", country: "Ukraine", artwork: "Unser Planet - unsere Verantwortung", message: "“Es geht um die Zukunft kuenftiger Generationen...”", leporello: "" },
         { id: 11, name: "Tetiana Sydorenko", country: "Ukraine", artwork: "Unser Planet - unsere Verantwortung", message: "“Es geht um die Zukunft kuenftiger Generationen...”", leporello: "" },
         { id: 12, name: "Olga Kostenko", country: "Ukraine", artwork: "Unser Planet - unsere Verantwortung", message: "“Es geht um die Zukunft kuenftiger Generationen...”", leporello: "" },
