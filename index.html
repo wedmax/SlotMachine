@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,11 +10,15 @@
             --bg-color: #ffffff;
             --text-color: #000000;
             --accent-color: #ff3b30;
-            --spin-speed: 12s; 
+            --spin-speed: 24s; /* Updated speed from 12s to 24s for slower reels */
             
             /* Sizing percentages relative to each half's current width */
-            --pattern-pct-left: 0.80 ;  /* % of left half width */
+            --pattern-pct-left: 0.80;  /* % of left half width */
             --pattern-pct-right: 0.65; /* % of right half width */
+        }
+
+        * {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
         }
 
         body, html {
@@ -23,9 +27,8 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: var(--bg-color);
+            background-color: transparent;
             color: var(--text-color);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             user-select: none;
         }
 
@@ -34,6 +37,7 @@
             width: 100vw;
             height: 100vh;
             position: relative;
+            z-index: 2;
         }
 
         .screen {
@@ -118,12 +122,17 @@
             color: var(--text-color);
             font-size: 2.4rem; /* 2x bigger */
             font-weight: 700;
-            text-transform: uppercase;
+            text-transform: none; /* Normal Casing instead of forced uppercase */
             padding: 15px 30px;
             background: rgba(0, 0, 0, 0.05);
             border-radius: 8px;
             pointer-events: none;
             text-align: center;
+        }
+
+        /* Retains Uppercase for object and artwork captions specifically */
+        .object-label {
+            text-transform: uppercase !important;
         }
 
         .result-display {
@@ -158,15 +167,21 @@
             color: var(--text-color);
             font-size: 2.4rem; /* 2x bigger */
             font-weight: 700;
-            text-transform: uppercase;
+            text-transform: none; /* Normal Casing instead of general uppercase */
             padding: 15px 30px;
             background: rgba(0, 0, 0, 0.05);
             border-radius: 8px;
             text-align: center;
         }
 
+        /* Retains uppercase caption exclusively on the right (object) result panel */
+        #label-object {
+            text-transform: uppercase !important;
+        }
+
         .show-result .reel-container { opacity: 0; }
 
+        /* Moved core message overlay container styling to screen-left bounds */
         #message-overlay {
             position: absolute;
             bottom: 60px;
@@ -190,13 +205,15 @@
             color: var(--text-color);
             margin-bottom: 0.5rem;
             line-height: 1.1;
-            text-transform: uppercase;
+            text-transform: none; /* Normal mixed-case instead of uppercase */
+            font-style: italic; /* Styled in Italics */
         }
 
         .speaker-icon {
             display: inline-block;
             margin-left: 15px;
             animation: blink 1.5s infinite;
+            font-style: normal; /* Restores standard orientation for icon */
         }
 
         @keyframes blink {
@@ -217,6 +234,7 @@
             left: 0;
             width: 100%;
             height: 100%;
+            background-color: var(--bg-color);
             pointer-events: none; 
             z-index: 1; 
         }
@@ -256,6 +274,7 @@
 <body class="spinning">
 <div class="corner-patterns"></div>
 <div id="app">
+    <!-- Left Panel: Profile / Portraits (And Match message overlay) -->
     <div id="screen-left" class="screen">
         <div class="reel-container" id="container-left">
             <div class="reel-strip" id="strip-left"></div>
@@ -263,19 +282,8 @@
         <div class="result-display">
             <img id="display-portrait" class="result-image" alt="">
             <div id="label-portrait" class="result-label"></div>
-        </div>
-    </div>
-
-    <div id="divider"></div>
-
-    <div id="screen-right" class="screen">
-        <div class="reel-container" id="container-right">
-            <div class="reel-strip" id="strip-right"></div>
-        </div>
-        <div class="result-display">
-            <img id="display-object" class="result-image" alt="">
-            <div id="label-object" class="result-label"></div>
             
+            <!-- Message overlay is now structurally moved here on the left panel -->
             <div id="message-overlay">
                 <div id="key-message-container" class="key-message">
                     <span id="key-message"></span><span class="speaker-icon">🔊</span>
@@ -284,34 +292,47 @@
             </div>
         </div>
     </div>
+
+    <div id="divider"></div>
+
+    <!-- Right Panel: Creative Object Artworks -->
+    <div id="screen-right" class="screen">
+        <div class="reel-container" id="container-right">
+            <div class="reel-strip" id="strip-right"></div>
+        </div>
+        <div class="result-display">
+            <img id="display-object" class="result-image" alt="">
+            <div id="label-object" class="result-label"></div>
+        </div>
+    </div>
 </div>
 
 <audio id="audio-player"></audio>
 
 <script>
     const data = [
-        { id: 1, name: "Halyna Sonina", country: "Ukraine", artwork: "Patchwork", message: "“Alten Dingen schenke ich neues Leben...”", leporello: "" },
-        { id: 2, name: "Loris Andreoli", country: "Schweiz", artwork: "Energie-Stuhl", message: "“Elektroschrott zerstoert die Natur in armen Laendern...”", leporello: "" },
-        { id: 3, name: "Ljubov Sobolyeva", country: "Ukraine", artwork: "Welt im Glas", message: "“Die Natur erneuert sich - und gibt innere Ruhe...”", leporello: "" },
-        { id: 4, name: "Tarek Shohimi", country: "Schweiz / Syrien", artwork: "Mach dir Licht!", message: "“Energie fasziniert. Mit den Haenden arbeiten ist wie meditieren...”", leporello: "" },
-        { id: 5, name: "Daria Kuzmina", country: "Ukraine", artwork: "Wesen", message: "“Aus Verletzung waechst Erneuerung...”", leporello: "" },
-        { id: 6, name: "Lubna Abou Kheir", country: "Syrien", artwork: "Sauerstoff", message: "“Ein langer Atem fuer die Zukunft...”", leporello: "" },
-        { id: 7, name: "Altaf Hussain Azimi", country: "Afghanistan", artwork: "Sauerstoff", message: "“Ein langer Atem fuer die Zukunft...”", leporello: "" },
-        { id: 8, name: "Valeriia Seiler", country: "Ukraine", artwork: "Sauerstoff", message: "“Ein langer Atem fuer die Zukunft...”", leporello: "" },
-        { id: 9, name: "Ruth Mujinga", country: "DR Kongo", artwork: "Maniok", message: "=" + "“Der Maniok-Baum spendet Leben...”", leporello: "" },
-        { id: 10, name: "Liudmyla Odarchuk", country: "Ukraine", artwork: "Unser Planet - unsere Verantwortung", message: "“Es geht um die Zukunft kuenftiger Generationen...”", leporello: "" },
-        { id: 11, name: "Tetiana Sydorenko", country: "Ukraine", artwork: "Unser Planet - unsere Verantwortung", message: "“Es geht um die Zukunft kuenftiger Generationen...”", leporello: "" },
-        { id: 12, name: "Olga Kostenko", country: "Ukraine", artwork: "Unser Planet - unsere Verantwortung", message: "“Es geht um die Zukunft kuenftiger Generationen...”", leporello: "" },
-        { id: 13, name: "Aresu Rabbani", country: "Afghanistan", artwork: "Auf der Flucht", message: "“Re-Cycling gehoert bei uns zum Alltag...”", leporello: "" },
-        { id: 14, name: "Anastasiia Biletska", country: "Ukraine", artwork: "WIP Photo", message: "“Im kreativen Prozess staerken wir Umweltverantwortung und Gemeinschaft...”", leporello: "" },
-        { id: 15, name: "Yulia Virts", country: "Ukraine", artwork: "Kuratorin", message: "“Umweltschutz kennt keine Nationalitaet...”", leporello: "" },
-        { id: 16, name: "Eva Oltivanyi", country: "Schweiz / Ungarn", artwork: "Kalocsa-Koffer", message: "“Neues in Altem...”", leporello: "" },
-        { id: 17, name: "Maxime Clusqeau", country: "Ukraine", artwork: "Chainmail Vest", message: "“Wissen um die Zerstoerung bewahren - durch eigenes Handeln...”", leporello: "" }
+        { id: 1, name: "Halyna Sonina", country: "Ukraine", artwork: "Patchwork", message: "Alten Dingen schenke ich neues Leben", leporello: "" },
+        { id: 2, name: "Loris Andreoli", country: "Schweiz", artwork: "Energie-Stuhl", message: "Elektroschrott zerstört die Natur in armen Ländern", leporello: "" },
+        { id: 3, name: "Ljubov Sobolyeva", country: "Ukraine", artwork: "Welt im Glas", message: "Die Natur erneuert sich - und gibt innere Ruhe", leporello: "" },
+        { id: 4, name: "Tarek Shohimi", country: "Schweiz / Syrien", artwork: "Mach dir Licht!", message: "Energie fasziniert. Mit den Händen arbeiten ist wie meditieren", leporello: "" },
+        { id: 5, name: "Daria Kuzmina", country: "Ukraine", artwork: "Wesen", message: "Aus Verletzung wächst Erneuerung", leporello: "" },
+        { id: 6, name: "Lubna Abou Kheir", country: "Syrien", artwork: "Sauerstoff", message: "Ein langer Atem für die Zukunft", leporello: "" },
+        { id: 7, name: "Altaf Hussain Azimi", country: "Afghanistan", artwork: "Sauerstoff", message: "Ein langer Atem für die Zukunft", leporello: "" },
+        { id: 8, name: "Valeriia Seiler", country: "Ukraine", artwork: "Sauerstoff", message: "Ein langer Atem für die Zukunft", leporello: "" },
+        { id: 9, name: "Ruth Mujinga", country: "Demokratische Republik Kongo", artwork: "Maniok", message: "Der Maniok-Baum spendet Leben", leporello: "" },
+        { id: 10, name: "Liudmyla Odarchuk", country: "Ukraine", artwork: "Unser Planet - unsere Verantwortung", message: "Es geht um die Zukunft künftiger Generationen", leporello: "" },
+        { id: 11, name: "Tetiana Sydorenko", country: "Ukraine", artwork: "Unser Planet - unsere Verantwortung", message: "Es geht um die Zukunft künftiger Generationen", leporello: "" },
+        { id: 12, name: "Olga Kostenko", country: "Ukraine", artwork: "Unser Planet - unsere Verantwortung", message: "Es geht um die Zukunft künftiger Generationen", leporello: "" },
+        { id: 13, name: "Aresu Rabbani", country: "Afghanistan", artwork: "Auf der Flucht", message: "Re-Cycling gehört bei uns zum Alltag", leporello: "" },
+        { id: 14, name: "Anastasiia Biletska", country: "Ukraine", artwork: "Kuratorin", message: "Im kreativen Prozess stärken wir Umweltverantwortung und Gemeinschaft", leporello: "" },
+        { id: 15, name: "Yulia Virts", country: "Ukraine", artwork: "Kuratorin", message: "Umweltschutz kennt keine Nationalität", leporello: "" },
+        { id: 16, name: "Eva Oltivanyi", country: "Schweiz / Ungarn", artwork: "Kalocsa-Koffer", message: "Neues in Altem", leporello: "" },
+        { id: 17, name: "Maxime Clusqeau", country: "Ukraine", artwork: "Chainmail Vest", message: "Wissen um die Zerstörung bewahren - durch eigenes Handeln", leporello: "" }
     ].map(item => {
         const idPad = String(item.id).padStart(2, '0');
         return {
             ...item,
-            portrait: item.id === 12 ? "" : `portrait_${idPad}.jpg`,
+            portrait: `portrait_${idPad}.jpg`,
             object: `object_${idPad}.jpg`,
             audio: `audio_${idPad}.mp3`
         };
@@ -335,6 +356,20 @@
     const leftContainer = document.getElementById('container-left');
     const rightContainer = document.getElementById('container-right');
 
+    function sanitizeText(str) {
+        if (!str) return "";
+        let cleaned = str.trim();
+        // Remove '=' prefix if any exists
+        if (cleaned.startsWith('=')) {
+            cleaned = cleaned.substring(1).trim();
+        }
+        // Remove typographical / straight quotes from beginning or end
+        cleaned = cleaned.replace(/^["'“‘”’„«»]+|["'“‘”’„«»]+$/g, '').trim();
+        // Remove leading/trailing ellipsis dots
+        cleaned = cleaned.replace(/^\.+|^\…+|\…+$|\.+$/g, '').trim();
+        return cleaned;
+    }
+
     function setupReels() {
         const content = [...data, ...data, ...data];
         content.forEach(item => {
@@ -350,7 +385,7 @@
             rightBox.className = 'reel-item-container';
             rightBox.innerHTML = `
                 <img src="${item.object}" class="reel-item">
-                <div class="item-label">${item.artwork}</div>
+                <div class="item-label object-label">${item.artwork}</div>
             `;
             rightStrip.appendChild(rightBox);
         });
@@ -397,9 +432,15 @@
         portImg.src = match.portrait || "";
         portImg.style.display = match.portrait ? 'block' : 'none';
         objImg.src = match.object;
+        
+        // Portrait label: Normal case
         portLab.innerText = `${match.name}, ${match.country}`;
+        
+        // Object label: Kept in Uppercase via CSS style identifier
         objLab.innerText = match.artwork;
-        keyMsg.innerText = match.message;
+        
+        // Clean dynamic quotes and trailing ellipsis dots safely
+        keyMsg.innerText = sanitizeText(match.message);
         leporello.innerText = match.leporello;
 
         body.classList.add('show-result');
@@ -434,12 +475,24 @@
 
     const divider = document.getElementById('divider');
     let isDragging = false;
+    
     divider.addEventListener('mousedown', () => isDragging = true);
     window.addEventListener('mouseup', () => isDragging = false);
     window.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
         const percent = (e.clientX / window.innerWidth) * 100;
         document.documentElement.style.setProperty('--divider-pos', `${percent}%`);
+    });
+
+    // Support touch drag on divider
+    divider.addEventListener('touchstart', () => isDragging = true);
+    window.addEventListener('touchend', () => isDragging = false);
+    window.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        if (e.touches && e.touches[0]) {
+            const percent = (e.touches[0].clientX / window.innerWidth) * 100;
+            document.documentElement.style.setProperty('--divider-pos', `${percent}%`);
+        }
     });
 
     audio.onended = resetToSpin;
