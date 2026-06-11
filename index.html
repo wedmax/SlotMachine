@@ -335,7 +335,22 @@
         };
     });
 
-    let currentIndex = 0;
+    let indexPool = [];
+    let poolPointer = 0;
+
+    function shufflePool() {
+        // Generate an array of indices [0, 1, 2, ..., data.length - 1]
+        indexPool = Array.from({ length: data.length }, (_, i) => i);
+        // Fisher-Yates Shuffle algorithm
+        for (let i = indexPool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [indexPool[i], indexPool[j]] = [indexPool[j], indexPool[i]];
+        }
+        poolPointer = 0;
+    }
+
+    // Initialize the first random sequence
+    shufflePool();
     let stopStage = 0; 
     let keysPressed = new Set();
 
@@ -403,7 +418,8 @@
         leftStrip.style.transform = `translateY(${matrix.m42}px)`;
         leftContainer.classList.add('stopping');
         
-        const targetY = - (currentIndex + data.length) * 100;
+        const activeIndex = indexPool[poolPointer];
+        const targetY = - (activeIndex + data.length) * 100;
         setTimeout(() => {
             leftStrip.style.transform = `translateY(${targetY}vh)`;
         }, 10);
@@ -416,7 +432,8 @@
         rightStrip.style.transform = `translateY(${matrix.m42}px)`;
         rightContainer.classList.add('stopping');
         
-        const targetY = - (currentIndex + data.length) * 100;
+        const activeIndex = indexPool[poolPointer];
+        const targetY = - (activeIndex + data.length) * 100;
         setTimeout(() => {
             rightStrip.style.transform = `translateY(${targetY}vh)`;
         }, 10);
@@ -425,7 +442,7 @@
     }
 
     function finalizeResult() {
-        const match = data[currentIndex];
+        const match = data[indexPool[poolPointer]];
         portImg.src = match.portrait || "";
         portImg.style.display = match.portrait ? 'block' : 'none';
         objImg.src = match.object;
@@ -443,7 +460,6 @@
         body.classList.add('show-result');
         audio.src = match.audio;
         audio.play().catch(e => console.warn("Playback prevented"));
-        currentIndex = (currentIndex + 1) % data.length;
     }
 
     function resetToSpin() {
@@ -454,6 +470,12 @@
         leftStrip.style.transform = '';
         rightStrip.style.transform = '';
         audio.pause();
+
+        // Move to next random item; reshuffle if pool is empty
+        poolPointer++;
+        if (poolPointer >= indexPool.length) {
+            shufflePool();
+        }
     }
 
     window.addEventListener('keydown', (e) => {
